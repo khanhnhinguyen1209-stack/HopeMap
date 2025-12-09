@@ -1,5 +1,5 @@
 // app/layout.jsx
-import { ClerkProvider } from '@clerk/nextjs';
+
 import './global.css';
 import "leaflet/dist/leaflet.css";
 
@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    
       <html lang="en">
         <body className="bg-gray-50 min-h-screen flex flex-col">
           
@@ -30,6 +30,6 @@ export default function RootLayout({ children }) {
 
         </body>
       </html>
-    </ClerkProvider>
+    
   );
 }
