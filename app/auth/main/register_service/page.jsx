@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { defaultConfig } from '@/lib/constants';
 import { showToast } from '@/components/core/Toast';
-import RegisterServiceForm from '@/components/forms/RegisterServiceForm'; // Form component
+import RegisterServiceForm from '@/components/RegisterServiceForm'; // Form component
 
 export default function RegisterServicePage() {
     const [currentType, setCurrentType] = useState('volunteer');

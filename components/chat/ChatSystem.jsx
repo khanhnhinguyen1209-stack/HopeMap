@@ -1,4 +1,3 @@
-// components/ChatSystem.jsx
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 
@@ -20,7 +19,6 @@ export default function ChatSystem() {
 
     setInput("");
     setIsSending(true);
-
     setMessages(prev => [...prev, { content: text, isUser: true }]);
 
     let reply = "";
@@ -30,7 +28,6 @@ export default function ChatSystem() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text })
       });
-
       const data = await res.json();
       reply = data?.reply || "Xin lỗi, AI chưa trả lời được.";
     } catch (err) {
@@ -41,11 +38,6 @@ export default function ChatSystem() {
   };
 
   const typeEffect = (text, onFinish) => {
-    if (!text || typeof text !== "string") {
-      setMessages(prev => [...prev, { content: "Xin lỗi, AI chưa trả lời được.", isUser: false }]);
-      if (onFinish) onFinish();
-      return;
-    }
     let idx = 0;
     let current = "";
 
@@ -60,9 +52,7 @@ export default function ChatSystem() {
 
       setMessages(prev => {
         const last = prev[prev.length - 1];
-        if (last?.isUser) {
-          return [...prev, { content: current, isUser: false }];
-        }
+        if (last?.isUser) return [...prev, { content: current, isUser: false }];
         return [...prev.slice(0, -1), { content: current, isUser: false }];
       });
     }, 16);
@@ -88,7 +78,7 @@ export default function ChatSystem() {
       <div className="flex gap-2 mt-4">
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={e => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Nhập tin nhắn..."
           className="flex-1 border px-4 py-2 rounded-l-lg outline-none"

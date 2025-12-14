@@ -1,38 +1,45 @@
-// components/core/Header.jsx
 'use client';
-import { useRouter } from 'next/navigation';
 
-export default function Header({ onLogout }) {
-  // Thay thế logic onLogout nếu bạn đã bỏ useAuth
-  const router = useRouter(); 
-  const handleAuthClick = () => {
-    // Nếu app là public, nút này có thể là nút Đăng nhập/Đăng ký
-    router.push('/auth/login'); 
-  }
+import { SignOutButton, useUser } from "@clerk/nextjs";
+
+export default function Header() {
+  const { user } = useUser();
 
   return (
-    <header className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg">
-      <div className="max-w-6xl mx-auto p-6 md:p-8 flex justify-between items-center">
-        
-        {/* Logo và Slogan */}
-        <div className="text-center w-full">
-          <h1 className="text-4xl font-extrabold tracking-tight">
-            🗺️ Hope Map
-          </h1>
-          <p className="text-sm italic mt-1 opacity-90">
-            "Khi bạn cảm thấy lạc lõng, hãy biết rằng vẫn có ánh sáng ở gần bạn — Hope Map sẽ dẫn đường."
-          </p>
-        </div>
+    <header className="relative bg-gradient-to-r from-purple-600 via-violet-500 to-indigo-500 text-white">
+      
+      {/* LOGOUT BUTTON */}
+      <div className="absolute top-6 right-6">
+        <SignOutButton redirectUrl="/sign-in">
+          <button className="px-5 py-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md 
+                             text-sm font-semibold transition shadow-lg">
+            🚪 Đăng xuất
+          </button>
+        </SignOutButton>
+      </div>
 
-        {/* Nút Đăng nhập/Đăng xuất (Nếu cần) */}
-        {/*
-        <button 
-          onClick={onLogout || handleAuthClick} 
-          className="ml-4 px-4 py-2 text-sm bg-white text-indigo-600 rounded-full font-semibold hover:bg-gray-100 transition duration-150"
-        >
-          {onLogout ? 'Đăng xuất' : 'Đăng nhập'}
-        </button>
-        */}
+      <div className="max-w-5xl mx-auto py-16 text-center space-y-5 px-4">
+        
+        <h1 className="text-5xl md:text-6xl font-extrabold flex items-center justify-center gap-3 drop-shadow-lg">
+          🗺️ Hope Map
+        </h1>
+
+        <p className="text-lg md:text-xl opacity-95 tracking-wide">
+          Bản Đồ Hy Vọng
+        </p>
+
+        <p className="italic opacity-90 max-w-2xl mx-auto leading-relaxed">
+          “Khi bạn cảm thấy lạc lõng, hãy biết rằng vẫn có ánh sáng ở gần bạn —  
+          Hope Map sẽ dẫn đường.”
+        </p>
+
+        {/* USER NAME */}
+        {user && (
+          <p className="mt-6 text-sm opacity-90">
+            👋 Xin chào, <span className="font-semibold">{user.firstName || user.username}</span>
+          </p>
+        )}
+
       </div>
     </header>
   );
