@@ -1,5 +1,5 @@
 'use client';
-
+import { supabase } from "@/lib/supabase";
 import React, { useState } from 'react';
 
 export default function ServiceRegistrationPage({ onNewData }) {
@@ -8,9 +8,11 @@ export default function ServiceRegistrationPage({ onNewData }) {
   const [contactMethods, setContactMethods] = useState([]);
   const [volunteerTypes, setVolunteerTypes] = useState([]);
   const [volunteerArea, setVolunteerArea] = useState("");
-
   const [description, setDescription] = useState("");
   const [phone, setPhone] = useState("");
+  const [volunteerPhone, setVolunteerPhone] = useState("");
+  const [latLng, setLatLng] = useState(null);
+  const [markers, setMarkers] = useState([]);
 
   const handleContactChange = (e) => {
     const { value, checked } = e.target;
@@ -26,31 +28,54 @@ export default function ServiceRegistrationPage({ onNewData }) {
     );
   };
 
-  // ----------------------------
-  // SUBMIT FORM
-  // ----------------------------
-  const submitForm = (data) => {
-    // Validate
-    if (data.type === "help") {
-      if (!description.trim()) return alert("Vui lòng nhập mô tả ngắn.");
+  // ================= SUBMIT FORM (FIX NEON) =================
 
-      if (urgency === "emergency" && !phone.trim()) {
-        return alert("Yêu cầu khẩn cấp cần số điện thoại!");
-      }
+  const submitForm = async (data) => {
+  try {
+    if (data.type === "help") {
+      if (!district) return alert("Vui lòng chọn quận/huyện");
+      if (!description.trim()) return alert("Vui lòng nhập mô tả.");
+      if (urgency === "emergency" && !phone.trim())
+        return alert("Khẩn cấp cần số điện thoại.");
+
+      const { error } = await supabase
+        .from("support_requests")
+        .insert({
+          support_level: urgency,
+          district,
+          contact_methods: contactMethods,
+          description,
+          phone: urgency === "emergency" ? phone : null
+        });
+
+      if (error) throw error;
     }
 
-    if (data.type === "help") {
-      const requests = JSON.parse(localStorage.getItem("hopeMapRequests") || "[]");
-      localStorage.setItem("hopeMapRequests", JSON.stringify([...requests, data]));
-    } else {
-      const helpers = JSON.parse(localStorage.getItem("hopeMapHelpers") || "[]");
-      localStorage.setItem("hopeMapHelpers", JSON.stringify([...helpers, data]));
+    if (data.type === "volunteer") {
+      if (!volunteerArea) return alert("Vui lòng chọn quận/huyện");
+      if (volunteerTypes.length === 0)
+        return alert("Chọn ít nhất 1 loại hỗ trợ.");
+
+      const { error } = await supabase
+        .from("volunteers")
+        .insert({
+          support_types: volunteerTypes,
+          district: volunteerArea,
+          phone: volunteerPhone || null
+        });
+
+      if (error) throw error;
     }
 
-    if (onNewData) onNewData();
     alert("Gửi thành công!");
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Có lỗi xảy ra");
+  }
+};
 
+
+  // ================= RETURN UI (FIX JSX) =================
   return (
     <section className="p-8 max-w-7xl mx-auto">
       <div className="grid md:grid-cols-2 gap-8">
@@ -129,12 +154,12 @@ export default function ServiceRegistrationPage({ onNewData }) {
               <option value="cuChi">Củ Chi</option>
               <option value="hocMon">Hóc Môn</option>
               <option value="canGio">Cần Giờ</option>
-              <option value="other">Khu vực khác</option>
               <option value="online">Hỗ trợ trực tuyến</option>
+              <option value="other">Khu vực khác</option>
             </select>
           </div>
 
-          {/* Contact Methods */}
+          {/* Contact */}
           <div className="mb-6">
             <label className="font-medium text-gray-700 block mb-2">
               Phương thức liên hệ ưa thích:
@@ -156,22 +181,16 @@ export default function ServiceRegistrationPage({ onNewData }) {
             </label>
           </div>
 
-          {/* Short Description */}
-          <div className="mb-6">
-            <label className="font-medium text-gray-700 block mb-2">
-              Mô tả ngắn:
-            </label>
-            <textarea
-              className="w-full border rounded-xl p-3"
-              rows={4}
-              placeholder="Hãy mô tả vấn đề bạn đang gặp..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+          {/* Description */}
+          <textarea
+            className="w-full border rounded-xl p-3 mb-4"
+            rows={4}
+            placeholder="Hãy mô tả vấn đề bạn đang gặp..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
-          {/* Phone (optional unless emergency) */}
-          {urgency === "emergency" && (
+                    {urgency === "emergency" && (
             <div className="mb-6">
               <label className="font-medium text-red-600 block mb-2">
                 Số điện thoại (bắt buộc với yêu cầu khẩn cấp):
@@ -186,18 +205,9 @@ export default function ServiceRegistrationPage({ onNewData }) {
             </div>
           )}
 
+
           <button
-            onClick={() =>
-              submitForm({
-                type: "help",
-                urgency,
-                district,
-                contactMethods,
-                description,
-                phone,
-                timestamp: Date.now(),
-              })
-            }
+            onClick={() => submitForm({ type: "help" })}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl shadow-lg"
           >
             💙 Gửi Yêu Cầu Hỗ Trợ
@@ -210,82 +220,66 @@ export default function ServiceRegistrationPage({ onNewData }) {
             🤝 Tôi Muốn Giúp Đỡ
           </h2>
 
-          {/* Volunteer types */}
           <div className="mb-6">
-            <label className="text-gray-700 font-medium block mb-2">
-              Loại hỗ trợ:
-            </label>
-
-            <label className="flex items-center mb-1">
-              <input type="checkbox" value="listening" onChange={handleVolunteerTypeChange} />
-              <span className="ml-2">Lắng nghe</span>
-            </label>
-
-            <label className="flex items-center mb-1">
-              <input type="checkbox" value="counseling" onChange={handleVolunteerTypeChange} />
-              <span className="ml-2">Tư vấn tâm lý</span>
-            </label>
-
-            <label className="flex items-center mb-1">
-              <input type="checkbox" value="emergency" onChange={handleVolunteerTypeChange} />
-              <span className="ml-2">Hỗ trợ khẩn cấp</span>
-            </label>
-
-            <label className="flex items-center mb-1">
-              <input type="checkbox" value="resource" onChange={handleVolunteerTypeChange} />
-              <span className="ml-2">Kết nối nguồn lực</span>
-            </label>
+            <label><input type="checkbox" value="listening" onChange={handleVolunteerTypeChange}/> Lắng nghe</label><br/>
+            <label><input type="checkbox" value="counseling" onChange={handleVolunteerTypeChange}/> Tư vấn tâm lý</label><br/>
+            <label><input type="checkbox" value="emergency" onChange={handleVolunteerTypeChange}/> Hỗ trợ khẩn cấp</label><br/>
+            <label><input type="checkbox" value="resource" onChange={handleVolunteerTypeChange}/> Kết nối nguồn lực</label>
           </div>
 
-          {/* Volunteer area */}
+          <select
+            className="w-full p-3 rounded-xl border-gray-300 mb-6"
+            value={volunteerArea}
+            onChange={(e) => setVolunteerArea(e.target.value)}
+          >
+            <option value="">Chọn quận/huyện</option>
+            <option value="quan1">Quận 1</option>
+            <option value="quan3">Quận 3</option>
+            <option value="quan4">Quận 4</option>
+            <option value="quan5">Quận 5</option>
+            <option value="quan6">Quận 6</option>
+            <option value="quan7">Quận 7</option>
+            <option value="quan8">Quận 8</option>
+            <option value="quan10">Quận 10</option>
+            <option value="quan11">Quận 11</option>
+            <option value="quan12">Quận 12</option>
+            <option value="binhThanh">Bình Thạnh</option>
+            <option value="goVap">Gò Vấp</option>
+            <option value="tanBinh">Tân Bình</option>
+            <option value="tanPhu">Tân Phú</option>
+            <option value="phuNhuan">Phú Nhuận</option>
+            <option value="thuDuc">Thủ Đức</option>
+            <option value="binhTan">Bình Tân</option>
+            <option value="nhaBe">Nhà Bè</option>
+            <option value="binhChanh">Bình Chánh</option>
+            <option value="cuChi">Củ Chi</option>
+            <option value="hocMon">Hóc Môn</option>
+            <option value="canGio">Cần Giờ</option>
+          </select>
           <div className="mb-6">
-            <label className="block text-gray-700 mb-1">Khu vực hoạt động:</label>
-            <select
-              className="w-full p-3 rounded-xl border-gray-300"
-              value={volunteerArea}
-              onChange={(e) => setVolunteerArea(e.target.value)}
-            >
-              <option value="">Chọn quận/huyện</option>
-              <option value="quan1">Quận 1</option>
-              <option value="quan3">Quận 3</option>
-              <option value="quan4">Quận 4</option>
-              <option value="quan5">Quận 5</option>
-              <option value="quan6">Quận 6</option>
-              <option value="quan7">Quận 7</option>
-              <option value="quan8">Quận 8</option>
-              <option value="quan10">Quận 10</option>
-              <option value="quan11">Quận 11</option>
-              <option value="quan12">Quận 12</option>
-              <option value="binhThanh">Bình Thạnh</option>
-              <option value="goVap">Gò Vấp</option>
-              <option value="tanBinh">Tân Bình</option>
-              <option value="tanPhu">Tân Phú</option>
-              <option value="phuNhuan">Phú Nhuận</option>
-              <option value="thuDuc">Thủ Đức</option>
-              <option value="binhTan">Bình Tân</option>
-              <option value="nhaBe">Nhà Bè</option>
-              <option value="binhChanh">Bình Chánh</option>
-              <option value="cuChi">Củ Chi</option>
-              <option value="hocMon">Hóc Môn</option>
-              <option value="canGio">Cần Giờ</option>
-            </select>
+            <label className="font-medium text-gray-700 block mb-2">
+              Số điện thoại liên hệ:
+            </label>
+            <input
+              type="text"
+              className="w-full p-3 border rounded-xl"
+              placeholder="Nhập số điện thoại..."
+              value={volunteerPhone}
+              onChange={(e) => setVolunteerPhone(e.target.value)}
+            />
           </div>
 
           <button
-            onClick={() =>
-              submitForm({
-                type: "volunteer",
-                volunteerTypes,
-                district: volunteerArea,
-                timestamp: Date.now(),
-              })
-            }
+            onClick={() => submitForm({ type: "volunteer" })}
             className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl shadow-xl"
           >
             💚 Đăng Ký Tình Nguyện Viên
           </button>
         </div>
+         
       </div>
+       
+      
     </section>
   );
 }
