@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+
 import bcrypt from "bcryptjs";
 import { generateToken } from "@/lib/auth";
 
