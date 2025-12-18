@@ -35,3 +35,4 @@ export async function POST(req) {
     return new Response(JSON.stringify({ reply: "Chatbot gặp lỗi." }), { status: 500 });
   }
 }
+

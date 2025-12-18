@@ -10,6 +10,8 @@ import MoodTracker from "@/components/mood/MoodTracker";
 import EmotionTest from "@/components/mood/EmotionTest";
 import MarkerModal from "@/components/map/MarkerModal";
 
+import StoriesPage from "@/components/stories/StoriesPage";
+
 // Dynamic map (disable SSR)
 const MapComponent = dynamic(
   () => import("@/components/map/MapComponent"),
@@ -72,6 +74,8 @@ export default function MapDashboardPage() {
         return <ChatSystem />;
       case "test":
         return <EmotionTest />;
+      case "stories":
+        return <StoriesPage />;
       default:
         return null;
     }
@@ -92,6 +96,7 @@ export default function MapDashboardPage() {
                 ["mood", "😊 Tâm Trạng"],
                 ["chat", "💬 Trò Chuyện"],
                 ["test", "🧠 Test cảm xúc"],
+                ["stories", "📖 Câu chuyện"],
               ].map(([key, label]) => (
                 <button
                   key={key}

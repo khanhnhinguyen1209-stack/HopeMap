@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { supabase } from "@/lib/supabase";
 
-// Fallback nếu thiếu lat/lng
+/* ===== TỌA ĐỘ QUẬN (fallback) ===== */
 const districtCoordinates = {
   quan1: [10.7756, 106.7019],
   quan3: [10.7821, 106.6862],
@@ -30,13 +30,45 @@ const districtCoordinates = {
   hocMon: [10.8794, 106.5953],
   canGio: [10.4147, 106.9667],
   other: [10.8231, 106.6297],
-  online: [10.8231, 106.6297],
 };
 
 export default function MapComponent() {
+  const mapContainerRef = useRef(null);   // ✅ BẮT BUỘC
   const mapRef = useRef(null);
   const markerLayerRef = useRef(null);
-// ================= LOAD EXISTING =================
+
+  /* ===== ADD MARKER ===== */
+  const addMarker = (data) => {
+  let lat = data.lat;
+  let lng = data.lng;
+
+  if (!lat || !lng) {
+    const fallback =
+      districtCoordinates[data.district] || districtCoordinates.other;
+    [lat, lng] = fallback;
+  }
+
+  let color = "yellow"; // mặc định
+
+  // 🟢 VOLUNTEER
+  if (data.support_types && data.support_types.length > 0) {
+    color = "green";
+  }
+  // 🔴 KHẨN CẤP
+  else if (data.support_level === "emergency") {
+    color = "red";
+  }
+
+  L.circleMarker([lat, lng], {
+    radius: 10,
+    color,
+    fillColor: color,
+    fillOpacity: 0.9,
+  }).addTo(markerLayerRef.current);
+};
+
+
+  /* ===== LOAD DATA ===== */
   const loadInitialMarkers = async () => {
     markerLayerRef.current.clearLayers();
 
@@ -48,31 +80,43 @@ export default function MapComponent() {
       .from("volunteers")
       .select("*");
 
-    requests?.forEach(r => addMarker({ ...r, type: "help" }));
-    volunteers?.forEach(v => addMarker({ ...v, type: "volunteer" }));
+    requests?.forEach(r =>
+      addMarker({ ...r, __source: "request" })
+    );
+
+    volunteers?.forEach(v =>
+      addMarker({ ...v, __source: "volunteer" })
+    );
   };
 
-  // ================= REALTIME =================
+  /* ===== REALTIME ===== */
   const setupRealtime = () => {
     supabase
       .channel("realtime-map")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "support_requests" },
-        payload => addMarker({ ...payload.new, type: "help" })
+        payload =>
+          addMarker({ ...payload.new, __source: "request" })
       )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "volunteers" },
-        payload => addMarker({ ...payload.new, type: "volunteer" })
+        payload =>
+          addMarker({ ...payload.new, __source: "volunteer" })
       )
       .subscribe();
   };
-  // ================= INIT MAP =================
+
+  /* ===== INIT MAP (CHUẨN NEXT.JS) ===== */
   useEffect(() => {
+    if (!mapContainerRef.current) return;
     if (mapRef.current) return;
 
-    mapRef.current = L.map("main-map").setView([10.8231, 106.6297], 12);
+    mapRef.current = L.map(mapContainerRef.current).setView(
+      [10.8231, 106.6297],
+      12
+    );
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
@@ -82,46 +126,17 @@ export default function MapComponent() {
 
     loadInitialMarkers();
     setupRealtime();
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
   }, []);
 
-  
-
-  // ================= ADD MARKER =================
-  const addMarker = (data) => {
-  let lat = data.lat;
-  let lng = data.lng;
-
-  // fallback theo quận
-  if (!lat || !lng) {
-    const fallback =
-      districtCoordinates[data.district] || districtCoordinates.other;
-    lat = fallback[0];
-    lng = fallback[1];
-  }
-
-  // ======= FIX MÀU CHUẨN =======
-  let color = "yellow"; // mặc định: cần trò chuyện
-
-  if (data.type === "volunteer") {
-    color = "green";              // ✅ TÌNH NGUYỆN
-  } else if (data.support_level === "emergency") {
-    color = "red";                // 🚨 KHẨN CẤP
-  }
-
-  L.circleMarker([lat, lng], {
-    radius: 10,
-    color,
-    fillColor: color,
-    fillOpacity: 0.9,
-  })
-    .addTo(markerLayerRef.current)
-    .bindPopup(renderPopup(data));
-};
-
-  // ================= POPUP =================
+  /* ===== POPUP ===== */
   const renderPopup = (data) => `
-    <div style="min-width:200px">
-      <b>${data.type === "volunteer" ? "🤝 Tình nguyện viên" : "🆘 Cần hỗ trợ"}</b><br/>
+    <div style="min-width:220px">
+      <b>${data.__source === "volunteer" ? "🤝 Tình nguyện viên" : "🆘 Cần hỗ trợ"}</b><br/>
       <b>Khu vực:</b> ${data.district || "TP.HCM"}<br/>
       ${
         data.support_level
@@ -132,12 +147,11 @@ export default function MapComponent() {
             }<br/>`
           : ""
       }
-      ${data.description ? `<p>${data.description}</p>` : ""}
       ${data.phone ? `<b>📞 ${data.phone}</b>` : ""}
     </div>
   `;
 
-  // ================= UI =================
+  /* ===== UI ===== */
   return (
     <section className="bg-white rounded-2xl shadow-xl p-6">
       <h2 className="text-3xl font-bold text-center mb-4">
@@ -150,19 +164,29 @@ export default function MapComponent() {
         <Legend color="green" text="Tình nguyện viên" />
       </div>
 
-      <div id="main-map" className="w-full h-[500px] rounded-lg border" />
+      {/* ✅ KHÔNG DÙNG id */}
+      <div
+        ref={mapContainerRef}
+        className="w-full h-[500px] rounded-lg border"
+      />
     </section>
   );
 }
 
+/* ===== LEGEND ===== */
 function Legend({ color, text }) {
+  const styles = {
+    red: { bg: "bg-red-50", dot: "bg-red-500", text: "text-red-700" },
+    yellow: { bg: "bg-yellow-50", dot: "bg-yellow-400", text: "text-yellow-700" },
+    green: { bg: "bg-green-50", dot: "bg-green-500", text: "text-green-700" },
+  };
+
+  const s = styles[color];
+
   return (
-    <div className="flex items-center justify-center bg-gray-50 rounded-xl p-3">
-      <div
-        className="w-4 h-4 rounded-full mr-3"
-        style={{ backgroundColor: color }}
-      />
-      <span className="font-medium">{text}</span>
+    <div className={`flex items-center justify-center rounded-2xl px-6 py-4 ${s.bg}`}>
+      <span className={`w-3 h-3 rounded-full mr-3 ${s.dot}`} />
+      <span className={`font-semibold ${s.text}`}>{text}</span>
     </div>
   );
 }

@@ -10,6 +10,7 @@ const navItems = [
     { label: '😊 Tâm Trạng', href: '/mood', section: 'mood' },
     { label: '💬 Trò Chuyện', href: '/chat', section: 'chat' },
     { label: '🧠 Test Cảm xúc', href: '/emotion-test', section: 'stories' },
+    { label: '📖 Câu Chuyện', href: '/stories', section: 'stories' },
 ];
 
 export default function Navbar() {
