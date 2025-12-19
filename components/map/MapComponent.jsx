@@ -39,7 +39,7 @@ export default function MapComponent() {
 
   /* ===== ADD MARKER ===== */
   const addMarker = (data) => {
-<<<<<<< HEAD
+
   let lat = data.lat;
   let lng = data.lng;
 
@@ -68,7 +68,6 @@ export default function MapComponent() {
   }).addTo(markerLayerRef.current);
 };
 
-=======
     let lat = data.lat;
     let lng = data.lng;
 
@@ -97,7 +96,7 @@ export default function MapComponent() {
       .addTo(markerLayerRef.current)
       .bindPopup(renderPopup(data));
   };
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
 
   /* ===== LOAD DATA ===== */
   const loadInitialMarkers = async () => {
@@ -111,19 +110,17 @@ export default function MapComponent() {
       .from("volunteers")
       .select("*");
 
-<<<<<<< HEAD
     requests?.forEach(r =>
       addMarker({ ...r, __source: "request" })
     );
 
     volunteers?.forEach(v =>
-=======
+
     requests?.forEach((r) =>
       addMarker({ ...r, __source: "request" })
     );
 
     volunteers?.forEach((v) =>
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
       addMarker({ ...v, __source: "volunteer" })
     );
   };
@@ -136,42 +133,41 @@ export default function MapComponent() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "support_requests" },
-<<<<<<< HEAD
+
         payload =>
-=======
+
         (payload) =>
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
           addMarker({ ...payload.new, __source: "request" })
       )
 
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "volunteers" },
-<<<<<<< HEAD
+
         payload =>
-=======
+
         (payload) =>
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
           addMarker({ ...payload.new, __source: "volunteer" })
       )
 
       .subscribe();
   };
 
-<<<<<<< HEAD
   /* ===== INIT MAP (CHUẨN NEXT.JS) ===== */
-=======
+
   /* ===== INIT MAP ===== */
 >>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapRef.current) return;
 
-<<<<<<< HEAD
+
     mapRef.current = L.map(mapContainerRef.current).setView(
-=======
+
     mapRef.current = L.map("main-map").setView(
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
       [10.8231, 106.6297],
       12
     );
@@ -194,15 +190,15 @@ export default function MapComponent() {
   /* ===== POPUP ===== */
   const renderPopup = (data) => `
     <div style="min-width:220px">
-<<<<<<< HEAD
+
       <b>${data.__source === "volunteer" ? "🤝 Tình nguyện viên" : "🆘 Cần hỗ trợ"}</b><br/>
-=======
+
       <b>${
         Array.isArray(data.support_types)
           ? "🤝 Tình nguyện viên"
           : "🆘 Cần hỗ trợ"
       }</b><br/>
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
       <b>Khu vực:</b> ${data.district || "TP.HCM"}<br/>
       ${
         data.support_level
@@ -213,14 +209,13 @@ export default function MapComponent() {
             }<br/>`
           : ""
       }
-<<<<<<< HEAD
-=======
+
       ${
         data.support_types
           ? `<b>Hỗ trợ:</b> ${data.support_types.join(", ")}<br/>`
           : ""
       }
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
       ${data.phone ? `<b>📞 ${data.phone}</b>` : ""}
     </div>
   `;
@@ -250,11 +245,11 @@ export default function MapComponent() {
 /* ===== LEGEND ===== */
 function Legend({ color, text }) {
   const styles = {
-<<<<<<< HEAD
+
     red: { bg: "bg-red-50", dot: "bg-red-500", text: "text-red-700" },
     yellow: { bg: "bg-yellow-50", dot: "bg-yellow-400", text: "text-yellow-700" },
     green: { bg: "bg-green-50", dot: "bg-green-500", text: "text-green-700" },
-=======
+
     red: {
       bg: "bg-red-50",
       dot: "bg-red-500",
@@ -270,7 +265,7 @@ function Legend({ color, text }) {
       dot: "bg-green-500",
       text: "text-green-700",
     },
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
   };
 
   const s = styles[color];
@@ -278,13 +273,13 @@ function Legend({ color, text }) {
   return (
     <div className={`flex items-center justify-center rounded-2xl px-6 py-4 ${s.bg}`}>
       <span className={`w-3 h-3 rounded-full mr-3 ${s.dot}`} />
-<<<<<<< HEAD
+
       <span className={`font-semibold ${s.text}`}>{text}</span>
-=======
+
       <span className={`font-semibold ${s.text}`}>
         {text}
       </span>
->>>>>>> 77e18f6c883f2a83aec5d1050ba37aab30d4a487
+
     </div>
   );
 }
