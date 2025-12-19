@@ -122,7 +122,7 @@ export default function MapComponent() {
 
     volunteers?.forEach((v) =>
       addMarker({ ...v, __source: "volunteer" })
-    );
+    ),
   };
 
   /* ===== REALTIME ===== */
