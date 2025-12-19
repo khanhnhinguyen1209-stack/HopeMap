@@ -118,7 +118,7 @@ export default function MapComponent() {
 
     requests?.forEach((r) =>
       addMarker({ ...r, __source: "request" })
-    );
+    ),
 
     volunteers?.forEach((v) =>
       addMarker({ ...v, __source: "volunteer" })
